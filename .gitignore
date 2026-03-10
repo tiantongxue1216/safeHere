@@ -1,0 +1,27 @@
+# 忽略 node_modules
+node_modules/
+cloudfunctions/*/node_modules/
+
+# 忽略 IDE 配置文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 忽略编译产物
+miniprogram_dist/
+
+# 忽略临时文件
+*.log
+.DS_Store
+Thumbs.db
+
+# 忽略包含敏感信息的配置文件（建议）
+# 取消下面行的注释以启用忽略
+# project.config.json
+# app.js
+
+# 忽略本地配置文件示例
+# config.example.js
+# .env.local

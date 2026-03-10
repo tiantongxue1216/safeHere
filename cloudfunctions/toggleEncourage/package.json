@@ -1,0 +1,9 @@
+{
+  "name": "toggleEncourage",
+  "version": "1.0.0",
+  "description": "处理用户鼓励和取消鼓励操作",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.0"
+  }
+}

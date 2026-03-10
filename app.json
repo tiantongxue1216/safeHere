@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/post/post",
+    "pages/detail/detail",
+    "pages/my-posts/my-posts"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#667eea",
+    "navigationBarTitleText": "匿名倾诉社区",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#e8f0f8"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,193 @@
+page {
+  background: linear-gradient(180deg, #e8f0f8 0%, #f0f4f8 100%);
+  min-height: 100vh;
+}
+
+.container {
+  padding: 0;
+}
+
+/* 头部 */
+.header {
+  padding: 60rpx 40rpx 40rpx;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  opacity: 0.9;
+}
+
+/* 内容区域 */
+.content-wrapper {
+  padding: 40rpx;
+}
+
+/* 文字输入 */
+.content-input {
+  width: 100%;
+  min-height: 300rpx;
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: 30rpx;
+}
+
+/* 语音部分 */
+.voice-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.voice-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  border-radius: 50rpx;
+  padding: 40rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.voice-btn:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+.btn-icon {
+  font-size: 40rpx;
+}
+
+.btn-text {
+  font-size: 32rpx;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.recording-status {
+  text-align: center;
+  padding: 40rpx;
+}
+
+.recording-icon {
+  font-size: 40rpx;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.recording-text {
+  font-size: 32rpx;
+  color: #e74c3c;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.recording-hint {
+  font-size: 26rpx;
+  color: #99aab5;
+}
+
+.voice-preview {
+  margin-top: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  background: #e8f0f8;
+  border-radius: 20rpx;
+}
+
+.voice-tag {
+  font-size: 28rpx;
+  color: #667eea;
+}
+
+.delete-voice {
+  font-size: 40rpx;
+  color: #e74c3c;
+  padding: 0 20rpx;
+}
+
+/* 表情部分 */
+.emoji-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: #8898aa;
+  margin-bottom: 20rpx;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20rpx;
+}
+
+.emoji-item {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f8;
+  border-radius: 16rpx;
+  font-size: 40rpx;
+}
+
+.emoji-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 提交按钮 */
+.submit-wrapper {
+  padding: 40rpx;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50rpx;
+  padding: 30rpx;
+  border: none;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.submit-btn.disabled {
+  background: #dfe6e9;
+  color: #b2bec3;
+}
+
+.submit-btn:active:not(.disabled) {
+  transform: scale(0.98);
+  opacity: 0.9;
+}

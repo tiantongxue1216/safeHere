@@ -1,0 +1,69 @@
+<view class="container">
+  <view class="header">
+    <text class="title">倾诉心声</text>
+    <text class="subtitle">这里很安全，放心表达吧</text>
+  </view>
+
+  <view class="content-wrapper">
+    <!-- 文字输入 -->
+    <textarea 
+      class="content-input"
+      placeholder="在这里写下你想说的话..."
+      maxlength="500"
+      value="{{content}}"
+      bindinput="onContentInput"
+      auto-height
+    />
+
+    <!-- 语音录制 -->
+    <view class="voice-section">
+      <button 
+       wx:if="{{!isRecording}}"
+        class="voice-btn"
+        bindtouchstart="startRecord"
+        bindtouchend="stopRecord"
+      >
+        <text class="btn-icon">🎤</text>
+        <text class="btn-text">按住说话</text>
+      </button>
+      
+      <view wx:else class="recording-status">
+        <text class="recording-icon">🔴</text>
+        <text class="recording-text">正在录音... {{recordingTime}}s</text>
+        <text class="recording-hint">松开发送</text>
+      </view>
+
+      <view wx:if="{{voiceUrl}}" class="voice-preview">
+        <text class="voice-tag">🎤 已录制语音</text>
+        <text class="delete-voice" bindtap="deleteVoice">×</text>
+      </view>
+    </view>
+
+    <!-- 表情选择 -->
+    <view class="emoji-section">
+      <view class="section-title">选择表情</view>
+      <view class="emoji-grid">
+        <view 
+         wx:for="{{emojiList}}" 
+         wx:key="*this"
+          class="emoji-item {{selectedEmoji === item ? 'active' : ''}}"
+          bindtap="selectEmoji"
+         data-emoji="{{item}}"
+        >
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-wrapper">
+    <button 
+      class="submit-btn {{(content || voiceUrl) ? '' : 'disabled'}}"
+      bindtap="submitPost"
+      disabled="{{!(content || voiceUrl)}}"
+    >
+      <text>发布心声</text>
+    </button>
+  </view>
+</view>

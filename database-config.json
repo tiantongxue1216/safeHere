@@ -1,0 +1,14 @@
+{
+  "posts": {
+    "read": true,
+    "write": "auth.openid == doc.userId"
+  },
+  "comments": {
+    "read": true,
+    "write": "auth.openid == doc.userId"
+  },
+  "encourages": {
+    "read": true,
+    "write": "auth.openid == doc.userId"
+  }
+}

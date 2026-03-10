@@ -1,0 +1,10 @@
+{
+  "name": "createComment",
+  "version": "1.0.0",
+  "description": "创建评论并审核内容",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "wx-server-sdk": "~2.6.0"
+  }
+}

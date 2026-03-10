@@ -1,0 +1,64 @@
+<view class="container">
+  <!-- 顶部标题 -->
+  <view class="header">
+    <text class="title">匿名倾诉社区</text>
+    <text class="subtitle">在这里，你的声音被听见</text>
+  </view>
+
+  <!-- 发帖按钮 -->
+  <view class="post-btn-wrapper">
+    <button class="post-btn" bindtap="goToPost">
+      <text class="btn-text">💌 写下你的心声</text>
+    </button>
+  </view>
+
+  <!-- 帖子列表 -->
+  <view class="posts-container">
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{posts.length === 0}}" class="empty">
+      <text>还没有帖子，来发第一个贴吧~</text>
+    </view>
+    
+    <view wx:else>
+      <view 
+        wx:for="{{posts}}" 
+        wx:key="_id"
+        class="post-card"
+        bindtap="goToDetail"
+        data-id="{{item._id}}"
+      >
+        <view class="post-header">
+          <text class="post-time">{{item.createTime}}</text>
+          <view wx:if="{{item.isMine}}" class="mine-tag">我的</view>
+        </view>
+        
+        <view class="post-content">
+          <text class="post-text">{{item.content}}</text>
+          <view wx:if="{{item.voiceUrl}}" class="voice-indicator">
+            <text>🎤 包含语音</text>
+          </view>
+        </view>
+        
+        <view class="post-footer">
+          <view class="action-item">
+            <text class="icon">💙</text>
+            <text class="count">{{item.encourageCount || 0}}</text>
+          </view>
+          <view class="action-item">
+            <text class="icon">💬</text>
+            <text class="count">{{item.commentCount || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的帖子入口 -->
+  <view class="my-posts" bindtap="goToMyPosts">
+    <text class="icon">📝</text>
+    <text>我的帖子</text>
+  </view>
+</view>

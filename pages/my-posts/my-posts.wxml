@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="header">
+    <text class="title">我的帖子</text>
+    <text class="subtitle">记录你的心路历程</text>
+  </view>
+
+  <view class="posts-container">
+    <view wx:if="{{loading}}" class="loading">
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{posts.length === 0}}" class="empty">
+      <text>你还没有发过帖子</text>
+      <button class="post-btn" bindtap="goToPost">去发帖</button>
+    </view>
+    
+    <view wx:else>
+      <view 
+       wx:for="{{posts}}" 
+       wx:key="_id"
+        class="post-card"
+        bindtap="goToDetail"
+       data-id="{{item._id}}"
+      >
+        <view class="post-header">
+          <text class="post-time">{{item.createTime}}</text>
+        </view>
+        
+        <view class="post-content">
+          <text class="post-text">{{item.content}}</text>
+          <view wx:if="{{item.voiceUrl}}" class="voice-indicator">
+            <text>🎤 包含语音</text>
+          </view>
+        </view>
+        
+        <view class="post-footer">
+          <view class="action-item">
+            <text class="icon">💙</text>
+            <text class="count">{{item.encourageCount || 0}}</text>
+          </view>
+          <view class="action-item">
+            <text class="icon">💬</text>
+            <text class="count">{{item.commentCount || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

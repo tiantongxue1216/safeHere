@@ -1,0 +1,131 @@
+<view class="container">
+  <!-- 帖子详情 -->
+  <view wx:if="{{post}}" class="post-detail">
+    <view class="post-header">
+      <text class="post-time">{{post.createTime}}</text>
+      <view wx:if="{{post.isMine}}" class="mine-tag">我的帖子</view>
+    </view>
+
+    <view class="post-content">
+      <text class="content-text">{{post.content}}</text>
+      
+      <!-- 语音播放 -->
+      <view wx:if="{{post.voiceUrl}}" class="voice-player">
+        <button 
+          class="play-btn"
+          bindtap="togglePlayVoice"
+        >
+          <text wx:if="{{!isPlaying}}" class="btn-icon">▶️</text>
+          <text wx:else class="btn-icon">⏸️</text>
+          <text class="btn-text">{{isPlaying ? '播放中' : '播放语音'}}</text>
+        </button>
+      </view>
+    </view>
+
+    <!-- 一键鼓励按钮 -->
+    <view class="encourage-section">
+      <button 
+        class="encourage-btn {{hasEncouraged ? 'active' : ''}}"
+        bindtap="toggleEncourage"
+      >
+        <text class="heart-icon {{hasEncouraged ? 'pulse' : ''}}">💙</text>
+        <text class="btn-text">{{hasEncouraged ? '已鼓励' : '一键鼓励'}}</text>
+        <text class="count">{{post.encourageCount || 0}}</text>
+      </button>
+      <text class="encourage-hint">给 TA 一些温暖和力量</text>
+    </view>
+  </view>
+
+  <!-- 评论区 -->
+  <view class="comments-section">
+    <view class="section-header">
+      <text class="section-title">温暖回应</text>
+      <text class="comment-count">{{comments.length}}条</text>
+    </view>
+
+    <!-- 评论列表 -->
+    <view class="comments-list">
+      <view 
+      wx:for="{{comments}}" 
+      wx:key="_id"
+        class="comment-item"
+      >
+        <view class="comment-avatar">👤</view>
+        <view class="comment-content">
+          <text class="comment-text">{{item.content}}</text>
+          
+          <!-- 语音评论 -->
+          <view wx:if="{{item.voiceUrl}}" class="comment-voice">
+            <button 
+              class="mini-play-btn"
+              bindtap="togglePlayCommentVoice"
+            data-url="{{item.voiceUrl}}"
+            >
+              <text wx:if="{{playingCommentId !== item._id}}">▶️</text>
+              <text wx:else>⏸️</text>
+              <text>语音</text>
+            </button>
+          </view>
+          
+          <text class="comment-time">{{item.createTime}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{comments.length === 0}}" class="no-comments">
+        <text>还没有评论，来传递温暖吧~</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 评论输入框 - 微信风格 -->
+  <view class="comment-input-bar">
+    <view class="input-bar-inner">
+      <!-- 语音按钮 -->
+      <button 
+        class="voice-btn {{isRecordingComment ? 'recording' : ''}}"
+        bindtouchstart="startRecordComment"
+        bindtouchend="stopRecordComment"
+        bindtouchcancel="stopRecordComment"
+      >
+        <text wx:if="{{!isRecordingComment}}" class="voice-icon-text">🎤</text>
+        <text wx:else class="voice-icon-text recording-icon-text">🔴</text>
+      </button>
+      
+      <!-- 输入框容器 -->
+      <view class="input-container">
+        <textarea 
+          class="comment-textarea"
+          placeholder="{{post.isMine ? '写下对自己的鼓励...' : '写下温暖的鼓励...'}}"
+          maxlength="200"
+          value="{{commentContent}}"
+          bindinput="onCommentInput"
+          auto-height
+          show-confirm-bar="{{false}}"
+          adjust-position="{{false}}"
+        />
+        <!-- 语音输入图标（输入框内） -->
+        <text wx:if="{{!commentContent && !tempCommentVoicePath}}" class="textarea-voice-icon">🎤</text>
+      </view>
+      
+      <!-- 表情按钮 -->
+      <button class="emoji-btn">
+        <text class="emoji-icon-text">😊</text>
+      </button>
+      
+      <!-- 发送按钮 -->
+      <button 
+        class="send-btn {{commentContent || tempCommentVoicePath ? 'active' : ''}}"
+        bindtap="submitComment"
+        disabled="{{!(commentContent || tempCommentVoicePath)}}"
+      >
+        <text class="send-text">发送</text>
+      </button>
+    </view>
+    
+    <!-- 录音提示 -->
+    <view wx:if="{{isRecordingComment}}" class="recording-hint">
+      <text class="hint-icon">🎤</text>
+      <text class="hint-text">松开发送语音</text>
+    </view>
+  </view>
+</view>
