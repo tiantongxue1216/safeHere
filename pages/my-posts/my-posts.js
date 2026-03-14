@@ -5,11 +5,24 @@ Page({
   },
 
   onLoad() {
-    this.loadMyPosts()
+    this.checkUserIdAndLoadPosts()
   },
 
   onShow() {
-    this.loadMyPosts()
+    this.checkUserIdAndLoadPosts()
+  },
+
+  // 检查userId并加载帖子
+  checkUserIdAndLoadPosts() {
+    const userId = getApp().globalData.userId
+    if (userId) {
+      this.loadMyPosts()
+    } else {
+      // 等待userId获取
+      setTimeout(() => {
+        this.checkUserIdAndLoadPosts()
+      }, 100)
+    }
   },
 
   // 加载我的帖子

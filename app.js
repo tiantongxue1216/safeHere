@@ -24,10 +24,21 @@ App({
     if (userId) {
       this.globalData.userId = userId
     } else {
-      // 生成新的用户 ID
-      const newUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-      wx.setStorageSync('userId', newUserId)
-      this.globalData.userId = newUserId
+      // 调用云函数获取 OPENID
+      wx.cloud.callFunction({
+        name: 'login',
+        success: (res) => {
+          const openId = res.result.openid
+          wx.setStorageSync('userId', openId)
+          this.globalData.userId = openId
+        },
+        fail: () => {
+          // 如果获取失败，生成临时 ID
+          const newUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+          wx.setStorageSync('userId', newUserId)
+          this.globalData.userId = newUserId
+        }
+      })
     }
   }
 })
