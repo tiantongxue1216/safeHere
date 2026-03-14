@@ -226,11 +226,8 @@ exports.auditCommentWithAI = async function auditCommentWithAI(commentText, post
       const auditData = JSON.parse(result);
       const { '审核结果': auditResult, '置信度': confidence, '判定原因': reason } = auditData;
       
-      console.log('解析结果:', auditResult, '置信度:', confidence);
-      
       // 仅当审核结果=拦截 且 置信度≥95 时，才执行拦截
       if (auditResult === '拦截' && confidence >= 95) {
-        console.log('❌ AI 审核拦截（高置信度）:', reason);
         return {
           pass: false,
           reason: reason || '评论内容可能伤害他人'
@@ -239,31 +236,24 @@ exports.auditCommentWithAI = async function auditCommentWithAI(commentText, post
       
       // 置信度 90-94 的拦截，进入人工复核，先放行
       if (auditResult === '拦截' && confidence >= 90 && confidence < 95) {
-        console.log('⚠️ AI 审核拦截（中置信度），进入人工复核，先放行');
         return { pass: true };
       }
       
       // 放行或人工复核，都放行
       if (auditResult === '放行' || auditResult === '人工复核') {
-        console.log('✅ AI 审核放行:', reason);
         return { pass: true };
       }
       
       // 默认放行
-      console.log('✅ 默认放行');
       return { pass: true };
       
     } catch (parseErr) {
-      console.error('解析 AI 结果失败:', parseErr.message);
       // 解析失败时，默认放行（防误拦）
-      console.warn('AI 结果解析失败，默认放行');
       return { pass: true };
     }
     
   } catch (err) {
-    console.error('AI 审核 API 调用失败:', err.message);
     // API 不可用时，返回审核失败，避免有害评论通过
-    console.warn('AI 服务不可用，审核失败');
     return { pass: false, reason: '评论审核失败，请稍后重试' };
   }
 };
