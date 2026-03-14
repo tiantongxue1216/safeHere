@@ -59,7 +59,7 @@
             <button 
               class="mini-play-btn"
               bindtap="togglePlayCommentVoice"
-            data-url="{{item.voiceUrl}}"
+              data-id="{{item._id}}"
             >
               <text wx:if="{{playingCommentId !== item._id}}">▶️</text>
               <text wx:else>⏸️</text>

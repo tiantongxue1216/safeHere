@@ -75,23 +75,32 @@ Page({
   // 加载评论
   async loadComments() {
     try {
-    const db = wx.cloud.database()
+      console.log('开始加载评论，postId:', this.data.postId)
+      const db = wx.cloud.database()
       
-    const res = await db.collection('comments')
+      const res = await db.collection('comments')
         .where({
           postId: this.data.postId
         })
         .orderBy('createTime', 'asc')
         .get()
       
-    const comments = res.data.map(comment => ({
+      console.log('评论查询结果:', res)
+      console.log('评论数量:', res.data.length)
+      
+      const comments = res.data.map(comment => ({
         ...comment,
         createTime: this.formatTime(comment.createTime)
       }))
       
+      console.log('处理后的评论:', comments)
       this.setData({ comments })
     } catch (err) {
-    console.error('加载评论失败:', err)
+      console.error('加载评论失败:', err)
+      wx.showToast({
+        title: '加载评论失败',
+        icon: 'none'
+      })
     }
   },
 
@@ -253,48 +262,54 @@ Page({
 
   // 提交评论
   async submitComment() {
-  const { commentContent, tempCommentVoicePath } = this.data
+    const { commentContent, tempCommentVoicePath } = this.data
     
     try {
-    wx.showLoading({
+      console.log('开始提交评论，postId:', this.data.postId)
+      console.log('评论内容:', commentContent)
+      console.log('语音路径:', tempCommentVoicePath)
+      
+      wx.showLoading({
         title: '发送中...',
         mask: true
       })
 
       // 调用云函数创建评论
-    const result = await wx.cloud.callFunction({
+      const result = await wx.cloud.callFunction({
         name: 'createComment',
-      data: {
+        data: {
           postId: this.data.postId,
-        content: commentContent,
+          content: commentContent,
           voiceUrl: tempCommentVoicePath
         }
       })
 
-    wx.hideLoading()
+      console.log('评论提交结果:', result)
+      wx.hideLoading()
 
-    if (result.result.success) {
-      wx.showToast({
+      if (result.result.success) {
+        wx.showToast({
           title: '评论成功',
           icon: 'success'
         })
         
         this.setData({
-        commentContent: '',
+          commentContent: '',
           tempCommentVoicePath: ''
         })
         
-        this.loadComments()
+        console.log('开始重新加载评论')
+        await this.loadComments()
       } else {
-      wx.showToast({
+        wx.showToast({
           title: result.result.message || '评论失败',
           icon: 'none'
         })
       }
     } catch (err) {
-    console.error('评论失败:', err)
-    wx.hideLoading()
-    wx.showToast({
+      console.error('评论失败:', err)
+      wx.hideLoading()
+      wx.showToast({
         title: '评论失败，请重试',
         icon: 'none'
       })

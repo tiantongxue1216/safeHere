@@ -8,145 +8,112 @@ cloud.init({
 
 const db = cloud.database()
 
-// 千问 API 配置
-const QWEN_API_KEY = 'sk-67506db88c094a568731cc9074c01285' // 替换为你的阿里云千问 API Key
-const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
-
-// 敏感词库（根据实际运营情况持续优化）
-const SENSITIVE_WORDS = {
-  // 硬拦截敏感词（直接拦截）
-  hardBlock: [
-    '傻逼', 'SB', '傻逼', '废物', '垃圾', '去死', '他妈', '操你妈',
-    '自杀', '自残', '跳楼', '割腕',
-    '微信', 'QQ', '电话', '加我', '私信', '联系方式',
-    'http://', 'https://', 'www.', '.com', '.cn'
-  ],
-  // 高风险触发词（进入大模型审核）
-  highRisk: [
-    '活该', '矫情', '玻璃心', '想太多', '太脆弱', '至于吗', '至于嘛',
-    '早跟你说过', '早就说了', '谁让你', '你自己选的',
-    '这有什么', '没什么大不了', '这很正常', '大家都这样',
-    '比你惨的多了', '你这算什么', '小事情', '别装了',
-    '你应该', '你不应该', '你要坚强', '想开点', '看开点'
-  ],
-  // 白名单词（可直接放行）
-  whitelist: [
-    '抱抱', '加油', '支持', '理解', '陪伴', '倾听',
-    '会好的', '会好起来的', '我懂你', '我在', '随时找我',
-    '🌸', '💪', '❤️', '🤗', '😊', '✨', '🌟'
-  ]
-}
+// 导入评论审核模块
+const commentAuditor = require('./comment-auditor')
 
 // 主函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { postId, content, voiceUrl } = event
   
-  console.log('=== 收到评论请求 ===')
-  console.log('postId:', postId)
-  console.log('content:', content)
-  console.log('voiceUrl:', voiceUrl)
-  console.log('openid:', wxContext.OPENID)
+
   
   try {
-    // 1. 第一层：前置合规过滤层（毫秒级）
+    // 1. 评论审核
     if (content && content.trim()) {
-      console.log('开始第一层前置过滤...')
-      const preFilterResult = await preFilterComment(content)
-      
-      console.log('前置过滤结果:', preFilterResult)
-      
-      // 前置过滤直接拦截
-      if (preFilterResult.action === 'block') {
-        return {
-          success: false,
-          message: preFilterResult.reason || '评论内容不符合社区规范'
-        }
-      }
-      
-      // 前置过滤直接放行
-      if (preFilterResult.action === 'pass') {
-        console.log('前置过滤直接放行')
-      }
-      
-      // 需要进入大模型审核
-      if (preFilterResult.action === 'review') {
-        console.log('进入大模型精准审核...')
-        const aiAuditResult = await auditCommentWithAI(content, postId)
+      try {
+        // 设置审核超时限制
+        const auditPromise = commentAuditor.auditComment(content, postId, db);
+        const auditResult = await Promise.race([
+          auditPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('审核超时')), 3500))
+        ]);
         
-        console.log('AI 审核结果:', aiAuditResult)
-        
-        if (!aiAuditResult.pass) {
+        // 审核不通过
+        if (!auditResult.pass) {
           return {
             success: false,
-            message: aiAuditResult.reason || '评论内容可能伤害他人，请修改后重试'
+            message: auditResult.reason || '评论内容不符合社区规范'
           }
         }
+      } catch (auditError) {
+        // 审核失败时返回错误，避免因审核问题导致有害评论通过
+        return {
+          success: false,
+          message: '评论审核失败，请稍后重试'
+        };
       }
-    } else {
-      console.log('无文字内容，跳过审核')
     }
     
     // 2. 上传语音文件到云存储
     let finalVoiceUrl = ''
     if (voiceUrl) {
-      console.log('开始上传语音...')
-      const fileName = `comment-voice/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`
-      const uploadResult = await cloud.uploadFile({
-        cloudPath: fileName,
-        fileContent: voiceUrl
-      })
-      finalVoiceUrl = uploadResult.fileID
-      console.log('语音上传成功:', finalVoiceUrl)
+      try {
+        // 设置上传超时限制
+        const uploadPromise = cloud.uploadFile({
+          cloudPath: `comment-voice/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`,
+          fileContent: voiceUrl
+        });
+        const uploadResult = await Promise.race([
+          uploadPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('上传超时')), 2000))
+        ]);
+        finalVoiceUrl = uploadResult.fileID
+      } catch (uploadError) {
+        // 上传失败时继续执行，不阻止评论发布
+      }
     }
     
     // 3. 创建评论
     const userId = wxContext.OPENID
     
-    console.log('开始创建评论...')
-    
     // 检查是否已经存在相同的评论（避免重复提交）
-    const existingComment = await db.collection('comments').where({
-      postId: postId,
-      userId: userId,
-      content: content || '',
-      createTime: db.command.gte(new Date(Date.now() - 1000)) // 1 秒内的评论
-    }).get()
-    
-    if (existingComment.data.length > 0) {
-      console.log('检测到重复评论，已存在')
-      return {
-        success: true,
-        message: '评论已存在'
-      }
-    }
-    
-    const commentResult = await db.collection('comments').add({
-      data: {
+    try {
+      const existingComment = await db.collection('comments').where({
         postId: postId,
         userId: userId,
         content: content || '',
-        voiceUrl: finalVoiceUrl || '',
-        createTime: new Date(),
-        isDeleted: false
+        createTime: db.command.gte(new Date(Date.now() - 1000)) // 1 秒内的评论
+      }).get()
+      
+      if (existingComment.data.length > 0) {
+        return {
+          success: true,
+          message: '评论已存在'
+        }
       }
-    })
-    
-    console.log('评论创建成功:', commentResult._id)
-    
-    // 4. 更新帖子的评论数
-    console.log('开始更新帖子评论数...')
-    await db.collection('posts').doc(postId).update({
-      data: {
-        commentCount: db.command.inc(1)
-      }
-    })
-    console.log('帖子评论数更新成功')
+      
+      // 创建评论
+      const commentResult = await db.collection('comments').add({
+        data: {
+          postId: postId,
+          userId: userId,
+          content: content || '',
+          voiceUrl: finalVoiceUrl || '',
+          createTime: new Date(),
+          isDeleted: false
+        }
+      })
+      
+      // 4. 更新帖子的评论数
+      await db.collection('posts').doc(postId).update({
+        data: {
+          commentCount: db.command.inc(1)
+        }
+      })
     
     return {
       success: true,
       commentId: commentResult._id,
       message: '评论成功'
+    }
+    } catch (dbError) {
+      console.error('数据库操作失败:', dbError.message);
+      // 数据库操作失败时，返回错误信息
+      return {
+        success: false,
+        message: `数据库操作失败：${dbError.message}`
+      };
     }
     
   } catch (err) {
@@ -168,206 +135,5 @@ exports.main = async (event, context) => {
   }
 }
 
-// 第一层：前置合规过滤层
-async function preFilterComment(text) {
-  const trimmedText = text.trim()
-  
-  // 1. 检查硬拦截敏感词
-  for (const word of SENSITIVE_WORDS.hardBlock) {
-    if (trimmedText.includes(word)) {
-      return {
-        action: 'block',
-        reason: '包含不当内容',
-        rule: 'hard-block'
-      }
-    }
-  }
-  
-  // 2. 检查白名单词（仅包含白名单词，直接放行）
-  const hasWhitelist = SENSITIVE_WORDS.whitelist.some(word => trimmedText.includes(word))
-  const hasHighRisk = SENSITIVE_WORDS.highRisk.some(word => trimmedText.includes(word))
-  
-  if (hasWhitelist && !hasHighRisk) {
-    return {
-      action: 'pass',
-      rule: 'whitelist'
-    }
-  }
-  
-  // 3. 基础规则快速过滤
-  // 纯表情/纯标点，直接放行
-  if (/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\p{P}]+$/u.test(trimmedText)) {
-    return {
-      action: 'pass',
-      rule: 'emoji-punctuation'
-    }
-  }
-  
-  // 超短内容（1-2 个字符），无风险，直接放行
-  if (trimmedText.length <= 2 && !hasHighRisk) {
-    return {
-      action: 'pass',
-      rule: 'short-text'
-    }
-  }
-  
-  // 4. 检查高风险触发词，进入大模型审核
-  if (hasHighRisk) {
-    return {
-      action: 'review',
-      rule: 'high-risk-trigger'
-    }
-  }
-  
-  // 5. 其他情况进入大模型审核
-  return {
-    action: 'review',
-    rule: 'default-review'
-  }
-}
 
-// 第二层：大模型精准审核层
-async function auditCommentWithAI(commentText, postId) {
-  console.log('AI 审核 - 评论文本:', commentText)
-  
-  try {
-    // 获取发帖原文（用于上下文理解）
-    let postContent = ''
-    try {
-      const postRes = await db.collection('posts').doc(postId).get()
-      postContent = postRes.data.content || ''
-      console.log('AI 审核 - 发帖原文:', postContent)
-    } catch (err) {
-      console.error('获取发帖原文失败:', err.message)
-    }
-    
-    // 调用千问 API 进行场景化精准审核
-    console.log('开始调用千问 API 进行场景化审核...')
-    const response = await axios.post(
-      QWEN_API_URL,
-      {
-        model: 'qwen-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: `你是匿名倾听社区的专属内容安全审核员。社区核心是为有情绪倾诉需求的用户提供安全、包容的树洞。
-
-【你的职责】
-1. 精准拦截会对发帖人造成二次伤害、违法违规、不良导向的评论
-2. 绝对不能误拦截共情安慰、理性陪伴、温和建议的友好评论
-3. 优先保障用户体验，边界争议内容一律不拦截
-
-【输入内容】
-- 发帖人倾诉原文：${postContent || '暂无'}
-- 用户评论内容：${commentText}
-
-【审核规则 - 优先级 1：必须拦截】
-1. 违法违规：涉政敏感、色情低俗、暴力血腥、违法犯罪引导
-2. 人身攻击：辱骂、诅咒、阴阳怪气、嘲讽、人格否定
-3. 二次伤害：否定情绪、指责受害者、洗白施害者（如「活该」「矫情」「谁让你自己选的」）
-4. 高危引导：诱导自残、自杀、报复社会
-5. 隐私引流：索要隐私、广告、引流外站、联系方式、刷屏
-6. 歧视引战：性别/地域/疾病歧视，挑起群体对立
-
-【审核规则 - 优先级 2：必须放行】
-1. 共情安慰：表达共情、安慰、关心、支持、鼓励
-2. 同频陪伴：分享相似经历、陪伴倾诉，无攻击否定
-3. 温和建议：不带指责、不说教，仅给温和理性建议
-4. 中性内容：纯表情、纯标点、无不良导向的简短回应
-
-【审核规则 - 优先级 3：边界内容】
-1. 轻微争议但无恶意：优先放行
-2. 无法明确判断：人工复核，不拦截
-3. 禁止将带有负面情绪的共情内容判定为拦截
-
-【输出要求】
-请严格按照以下 JSON 格式输出：
-{
-  "审核结果": "拦截/放行/人工复核",
-  "命中规则": "优先级 1-3 / 优先级 2-1 等",
-  "判定原因": "简短说明，不超过 30 字",
-  "置信度": 0-100
-}
-
-示例 1（放行）：
-评论："抱抱你，会好起来的"
-输出：{"审核结果":"放行","命中规则":"优先级 2-1","判定原因":"表达共情安慰","置信度":98}
-
-示例 2（拦截）：
-评论："这有什么好难过的，你想太多了"
-输出：{"审核结果":"拦截","命中规则":"优先级 1-3","判定原因":"否定情绪，二次伤害","置信度":96}
-
-示例 3（边界放行）：
-评论："我理解你的感受，不过也许可以换个角度想"
-输出：{"审核结果":"放行","命中规则":"优先级 3-1","判定原因":"温和建议，无恶意","置信度":85}
-
-请审核以上评论。`          },
-          {
-            role: 'user',
-            content: '请根据社区规则审核这条评论，确保不伤害发帖人'
-          }
-        ]
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${QWEN_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    console.log('API 响应状态:', response.status)
-    const result = response.data.choices[0].message.content.trim()
-    console.log('AI 返回结果:', result)
-    
-    // 解析 JSON 结果
-    try {
-      const auditData = JSON.parse(result)
-      const { '审核结果': auditResult, '置信度': confidence, '判定原因': reason } = auditData
-      
-      console.log('解析结果:', auditResult, '置信度:', confidence)
-      
-      // 仅当审核结果=拦截 且 置信度≥95 时，才执行拦截
-      if (auditResult === '拦截' && confidence >= 95) {
-        console.log('❌ AI 审核拦截（高置信度）:', reason)
-        return {
-          pass: false,
-          reason: reason || '评论内容可能伤害他人'
-        }
-      }
-      
-      // 置信度 90-94 的拦截，进入人工复核，先放行
-      if (auditResult === '拦截' && confidence >= 90 && confidence < 95) {
-        console.log('⚠️ AI 审核拦截（中置信度），进入人工复核，先放行')
-        return { pass: true }
-      }
-      
-      // 放行或人工复核，都放行
-      if (auditResult === '放行' || auditResult === '人工复核') {
-        console.log('✅ AI 审核放行:', reason)
-        return { pass: true }
-      }
-      
-      // 默认放行
-      console.log('✅ 默认放行')
-      return { pass: true }
-      
-    } catch (parseErr) {
-      console.error('解析 AI 结果失败:', parseErr.message)
-      // 解析失败时，默认放行（防误拦）
-      console.warn('AI 结果解析失败，默认放行')
-      return { pass: true }
-    }
-    
-  } catch (err) {
-    console.error('AI 审核 API 调用失败:', err.message)
-    // API 不可用时，默认放行（防误拦）
-    if (err.code === 'ENOTFOUND' || err.code === 'ECONNRESET' || err.response?.status === 401) {
-      console.warn('AI 服务不可用，默认放行')
-      return { pass: true }
-    }
-    // 其他错误，进入人工复核
-    return { pass: true }
-  }
-}
 
