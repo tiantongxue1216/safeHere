@@ -63,7 +63,6 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-   console.error('创建帖子失败:', err)
     return {
       success: false,
       message: '发布失败，请稍后重试'
@@ -125,7 +124,6 @@ async function auditContent(text) {
     }
     
   } catch (err) {
-   console.error('内容审核失败:', err)
     // 审核失败时默认拦截
     return {
       pass: false,

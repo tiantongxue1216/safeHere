@@ -64,7 +64,6 @@ Page({
         hasEncouraged: encourageRes.data.length > 0
       })
     } catch (err) {
-    console.error('加载帖子失败:', err)
     wx.showToast({
         title: '加载失败',
         icon: 'none'
@@ -75,7 +74,6 @@ Page({
   // 加载评论
   async loadComments() {
     try {
-      console.log('开始加载评论，postId:', this.data.postId)
       const db = wx.cloud.database()
       
       const res = await db.collection('comments')
@@ -85,18 +83,13 @@ Page({
         .orderBy('createTime', 'asc')
         .get()
       
-      console.log('评论查询结果:', res)
-      console.log('评论数量:', res.data.length)
-      
       const comments = res.data.map(comment => ({
         ...comment,
         createTime: this.formatTime(comment.createTime)
       }))
       
-      console.log('处理后的评论:', comments)
       this.setData({ comments })
     } catch (err) {
-      console.error('加载评论失败:', err)
       wx.showToast({
         title: '加载评论失败',
         icon: 'none'
@@ -169,7 +162,6 @@ Page({
         })
       }
     } catch (err) {
-      console.error('鼓励操作失败:', err)
       wx.hideLoading()
       wx.showToast({
         title: '操作失败，请稍后重试',
@@ -265,10 +257,6 @@ Page({
     const { commentContent, tempCommentVoicePath } = this.data
     
     try {
-      console.log('开始提交评论，postId:', this.data.postId)
-      console.log('评论内容:', commentContent)
-      console.log('语音路径:', tempCommentVoicePath)
-      
       wx.showLoading({
         title: '发送中...',
         mask: true
@@ -284,7 +272,6 @@ Page({
         }
       })
 
-      console.log('评论提交结果:', result)
       wx.hideLoading()
 
       if (result.result.success) {
@@ -298,7 +285,6 @@ Page({
           tempCommentVoicePath: ''
         })
         
-        console.log('开始重新加载评论')
         await this.loadComments()
       } else {
         wx.showToast({
@@ -307,7 +293,6 @@ Page({
         })
       }
     } catch (err) {
-      console.error('评论失败:', err)
       wx.hideLoading()
       wx.showToast({
         title: '评论失败，请重试',

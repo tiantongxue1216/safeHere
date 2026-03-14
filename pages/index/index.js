@@ -15,15 +15,10 @@ Page({
   // 测试数据库连接
   async testDatabase() {
    try {
-     console.log('🔍 开始验证数据库...')
-      
      const db = wx.cloud.database()
       
       // 尝试访问 posts 集合
      const res = await db.collection('posts').get()
-      
-     console.log('✅ 数据库验证成功！')
-     console.log('当前帖子数量:', res.data.length)
       
      wx.showToast({
         title: '数据库正常',
@@ -33,11 +28,9 @@ Page({
       
       return true
     } catch(err) {
-     console.error('❌ 数据库验证失败:', err)
-      
      wx.showModal({
         title: '数据库错误',
-       content: '请检查是否已创建数据库集合。错误信息：' + err.errMsg,
+        content: '请检查是否已创建数据库集合。错误信息：' + err.errMsg,
         showCancel: false,
        confirmText: '我知道了'
       })
@@ -80,7 +73,6 @@ Page({
         loading: false
       })
     } catch (err) {
-      console.error('加载帖子失败:', err)
       wx.showToast({
         title: '加载失败',
         icon: 'none'

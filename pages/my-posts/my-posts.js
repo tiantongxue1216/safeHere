@@ -37,7 +37,6 @@ Page({
         loading: false
       })
     } catch (err) {
-     console.error('加载帖子失败:', err)
      wx.showToast({
         title: '加载失败',
         icon: 'none'

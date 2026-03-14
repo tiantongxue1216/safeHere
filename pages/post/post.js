@@ -17,19 +17,15 @@ Page({
     
     // 监听录音事件
     this.recorderManager.onStart(() => {
-     console.log('录音开始')
     })
 
     this.recorderManager.onPause(() => {
-     console.log('录音暂停')
     })
 
     this.recorderManager.onResume(() => {
-     console.log('录音恢复')
     })
 
     this.recorderManager.onStop((res) => {
-     console.log('录音结束', res)
       this.setData({
         tempVoicePath: res.tempFilePath,
         voiceUrl: res.tempFilePath
@@ -41,7 +37,6 @@ Page({
     })
 
     this.recorderManager.onError((err) => {
-     console.error('录音错误:', err)
      wx.showToast({
         title: '录音失败',
         icon: 'none'
@@ -169,7 +164,6 @@ Page({
         })
       }
     } catch (err) {
-     console.error('发布失败:', err)
      wx.hideLoading()
      wx.showToast({
         title: '发布失败，请重试',

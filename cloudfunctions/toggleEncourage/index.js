@@ -100,7 +100,6 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-    console.error('鼓励操作失败:', err)
     return {
       success: false,
       message: '操作失败，请稍后重试'
