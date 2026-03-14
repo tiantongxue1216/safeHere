@@ -32,13 +32,23 @@ Page({
       
      const userId = getApp().globalData.userId
      const db = wx.cloud.database()
-      
+     
+     // 调试信息
+     console.log('当前用户ID:', userId)
+     
+     // 先获取所有帖子，看看数据库中有什么
+     const allPosts = await db.collection('posts').get()
+     console.log('所有帖子:', allPosts.data)
+     
+     // 然后获取当前用户的帖子
      const res = await db.collection('posts')
         .where({
           userId: userId
         })
         .orderBy('createTime', 'desc')
         .get()
+     
+     console.log('当前用户的帖子:', res.data)
       
      const posts = res.data.map(post => ({
         ...post,
@@ -50,6 +60,7 @@ Page({
         loading: false
       })
     } catch (err) {
+     console.error('加载帖子失败:', err)
      wx.showToast({
         title: '加载失败',
         icon: 'none'
